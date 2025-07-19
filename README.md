@@ -2,6 +2,57 @@
 
 这是一个用于在本地对多种编程课程练习进行评测的工具，支持 Rust、C++ 等多种语言的课程，无需依赖 GitHub Actions。
 
+## Compile / Config
+
+Claude Code:
+
+```toml
+# compile
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "link-arg=/usr/lib/ld-linux-x86-64.so.2"]
+```
+
+```
+# Config
+Great! It worked. Now you have two ways to run the xtask commands:
+
+  Correct Usage Methods:
+
+  Method 1: Using cargo run --bin xtask
+
+**Configure a course**
+
+  cargo run --bin xtask -- learn learning-lm-rs --submodule https://github.com/user/learning-lm-rs.git
+
+  ###### **Evaluate all courses**
+  cargo run --bin xtask -- eval
+
+**Evaluate specific course**
+
+  cargo run --bin xtask -- eval --course learning-lm-rs
+
+  Method 2: Install as cargo extension (optional)
+
+**Install cargo-xtask globally (if you want to use `cargo xtask`)**
+
+  cargo install --path ./xtask --bin xtask
+
+  Then you could use cargo xtask directly.
+
+  Method 3: Use the built binary directly
+
+**After cargo build --release**
+
+  ./target/release/xtask learn learning-lm-rs --submodule https://github.com/user/learning-lm-rs.git
+
+  The issue was: The README shows cargo xtask but this requires the binary to be installed as a cargo extension. The workspace structure shows xtask
+  is a local binary, so you need to run it via cargo run --bin xtask.
+
+  Your command should now work with:
+  cargo run --bin xtask -- learn learning-lm-rs --submodule https://github.com/Anekoique/learning-lm-rs.git
+
+```
+
 ## 功能特点
 
 - 🚀 **多课程支持**: 支持 `learning-lm-rs`、`learning-cxx`、`rustlings` 等多种课程类型

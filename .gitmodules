@@ -1,6 +1,6 @@
 [submodule "exercises/learning-lm-rs"]
 	path = exercises/learning-lm-rs
-	url = https://github.com/wawahejun/learning-lm-rs
+	url = https://github.com/Anekoique/learning-lm-rs.git
 [submodule "exercises/rustlings"]
 	path = exercises/rustlings
 	url = https://github.com/wawahejun/rustlings-completed-version

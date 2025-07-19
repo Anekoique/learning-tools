@@ -1,6 +1,2 @@
-﻿[alias]
-xtask = "run --package xtask --release --"
-debug = "run --package xtask --"
-setup = "xtask setup"
-learn = "xtask learn"
-eval = "xtask eval"
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "link-arg=/usr/lib/ld-linux-x86-64.so.2"]
