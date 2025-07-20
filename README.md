@@ -39,6 +39,7 @@ Great! It worked. Now you have two ways to run the xtask commands:
 
   Then you could use cargo xtask directly.
 
+
   Method 3: Use the built binary directly
 
 **After cargo build --release**

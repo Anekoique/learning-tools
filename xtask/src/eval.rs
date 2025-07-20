@@ -413,7 +413,7 @@ fn find_exercise_files(course_path: &Path, _course: &Option<String>) -> Result<V
             let path = entry.path();
             if path.is_file() && path.extension().map_or(false, |ext| ext == "rs") {
                 let file_name = path.file_name().unwrap().to_string_lossy();
-                if !file_name.starts_with("test_") && !file_name.starts_with("helper_") {
+                if !file_name.starts_with("test_") && !file_name.starts_with("helper_") && file_name != "build.rs" {
                     exercise_files.push(path.to_path_buf());
                 }
             }
@@ -430,7 +430,7 @@ fn find_exercise_files(course_path: &Path, _course: &Option<String>) -> Result<V
             }
             if path.is_file() && path.extension().map_or(false, |ext| ext == "rs") {
                 let file_name = path.file_name().unwrap().to_string_lossy();
-                if !file_name.starts_with("test_") && !file_name.starts_with("helper_") {
+                if !file_name.starts_with("test_") && !file_name.starts_with("helper_") && file_name != "build.rs" {
                     exercise_files.push(path.to_path_buf());
                 }
             }
@@ -508,34 +508,56 @@ path = "src/main.rs"
         }
     }
 
-    // 对于rustlings练习，直接使用rustc编译和运行测试
-    let test_output = Command::new("rustc")
-        .arg(exercise_path)
-        .arg("--test")
-        .arg("-o")
-        .arg(format!("target/debug/{}", exercise_name))
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .context(format!("编译练习 {} 失败", exercise_name))?;
+    // 检查是否是tests目录下的练习（需要build.rs支持）
+    let is_tests_exercise = exercise_path.parent()
+        .and_then(|p| p.file_name())
+        .map(|name| name == "tests")
+        .unwrap_or(false);
 
-    let success = test_output.status.success();
+    let test_output = if is_tests_exercise {
+        // 对于tests目录下的练习，使用cargo test来确保build.rs被执行
+        let exercise_dir = exercise_path.parent().context("无法获取练习目录")?;
+        Command::new("cargo")
+            .arg("test")
+            .arg("--bin")
+            .arg(exercise_name.trim_end_matches(".rs"))
+            .current_dir(exercise_dir)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .context(format!("运行 cargo test 测试 {} 失败", exercise_name))?
+    } else {
+        // 对于其他rustlings练习，直接使用rustc编译和运行测试
+        let compile_output = Command::new("rustc")
+            .arg(exercise_path)
+            .arg("--test")
+            .arg("-o")
+            .arg(format!("target/debug/{}", exercise_name))
+            .arg("-C")
+            .arg("link-arg=/usr/lib/ld-linux-x86-64.so.2")
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .context(format!("编译练习 {} 失败", exercise_name))?;
 
-    if !success {
-        if verbose {
-            println!("{}", String::from_utf8_lossy(&test_output.stdout));
-            println!("{}", String::from_utf8_lossy(&test_output.stderr));
+        let success = compile_output.status.success();
+
+        if !success {
+            if verbose {
+                println!("{}", String::from_utf8_lossy(&compile_output.stdout));
+                println!("{}", String::from_utf8_lossy(&compile_output.stderr));
+            }
+            println!("{} {}", "✗".red().bold(), exercise_name);
+            return Ok((exercise_name, false, start.elapsed().as_secs()));
         }
-        println!("{} {}", "✗".red().bold(), exercise_name);
-        return Ok((exercise_name, false, start.elapsed().as_secs()));
-    }
 
-    // 编译成功，运行测试
-    let test_output = Command::new(format!("target/debug/{}", exercise_name))
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .context(format!("运行练习 {} 失败", exercise_name))?;
+        // 编译成功，运行测试
+        Command::new(format!("target/debug/{}", exercise_name))
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .context(format!("运行练习 {} 失败", exercise_name))?
+    };
 
     let success = test_output.status.success();
 
